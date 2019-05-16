@@ -70,3 +70,16 @@ def subimages(image, amount = (10, 10), sizePixels = None):
 
     # create subimages
     return [(image.crop(box), box) for box in boxes]
+
+def pseudoDownsample(image, samplesize):
+    '''
+    Downsamples the image via nearest neighbour,
+    but keeps the original resolution.
+    Returns a 3D numpy array.
+    '''
+    img = np.array(image)
+    for subimg, box in subimages(image, sizePixels=samplesize):
+        avgRgb = meanByChannel(subimg)
+        applyRgbToRegion(img, avgRgb, box)
+
+    return img

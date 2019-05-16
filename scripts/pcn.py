@@ -10,7 +10,7 @@
 
 import numpy as np
 
-class pcn:
+class Pcn:
 	""" A basic Perceptron"""
 
 	def __init__(self,inputs,targets):
@@ -41,7 +41,7 @@ class pcn:
 		inputs = np.concatenate((inputs,-np.ones((self.nData,1))),axis=1)
 
 		# Training
-		change = range(self.nData)
+		change = list(range(self.nData))
 
 		for n in range(nIterations):
 			self.activations = self.pcnfwd(inputs);
@@ -86,8 +86,8 @@ class pcn:
 			for j in range(nClasses):
 				cm[i,j] = np.sum(np.where(outputs==i,1,0)*np.where(targets==j,1,0))
 
-		print cm
-		print np.trace(cm)/np.sum(cm)
+		print(cm)
+		print(np.trace(cm)/np.sum(cm))
 
 def testPcn():
 	def splitInputsTargets(data, numInputs):
@@ -97,9 +97,9 @@ def testPcn():
 		return inputs, targets
 
 	def evalModel(name, data, numInputs, numIterations):
-		print '\n {}\twith {} inputs and {} iterations'.format(name, numInputs, numIterations)
+		print('\n {}\twith {} inputs and {} iterations'.format(name, numInputs, numIterations))
 		inp, out = splitInputsTargets(data, numInputs)
-		p = pcn(inp, out)
+		p = Pcn(inp, out)
 		p.pcntrain(inp, out, 0.25, numIterations)
 		p.confmat(inp, out)
 

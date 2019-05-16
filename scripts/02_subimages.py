@@ -3,17 +3,10 @@ from PIL import Image
 
 from utils import (
     processImagesFromCli,
-    meanByChannel,
-    applyRgbToRegion,
-    subimages,
+    pseudoDownsample,
 )
 
 def processImage(image):
-    img = np.array(image)
-    for subimg, box in subimages(image, sizePixels=(30, 30)):
-        avgRgb = meanByChannel(subimg)
-        applyRgbToRegion(img, avgRgb, box)
-
-    return Image.fromarray(img)
+    return Image.fromarray(pseudoDownsample(image, (30, 30)))
 
 processImagesFromCli(processImage, 'rgb_resample')
