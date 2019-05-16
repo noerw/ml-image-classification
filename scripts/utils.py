@@ -39,7 +39,34 @@ def applyRgbToRegion(image, rgb, box):
     box: tuple of (xmin,ymin,xmax,ymax)
     '''
     # TODO: check dimensions first
-    for row in range(box[0], box[2]):
-        for col in range(box[1], box[3]):
+    for col in range(box[0], box[2]):
+        for row in range(box[1], box[3]):
             image[row][col] = rgb
     return image
+
+def subimages(image, amount = (10, 10), sizePixels = None):
+    '''
+    Returns a grid of subimages, as list of (PIL.Image, box) tuples.
+    Either by amount of subimages, or by size of the subimages.
+    '''
+
+    if not sizePixels:
+        sizePixels = (
+            int(image.size[0] / amount[0]),
+            int(image.size[1] / amount[1])
+        )
+
+    # create boxes with given size in pixels
+    boxes = []
+    for x in range(0, image.size[0], sizePixels[0]):
+        for y in range(0, image.size[1], sizePixels[1]):
+            box = (
+                x,
+                y,
+                min(x + sizePixels[0], image.size[0]),
+                min(y + sizePixels[1], image.size[1]),
+            )
+            boxes.append(box)
+
+    # create subimages
+    return [(image.crop(box), box) for box in boxes]
