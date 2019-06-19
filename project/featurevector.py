@@ -66,38 +66,43 @@ def featureVectorFromImage(image, className):
 
 ##### MAIN#####
 
-baseDir = './trainingdata'
-featuresSky = [] # will contain the feature vectors for all training pixels
-featuresRiver = []
-featuresOther = []
-featuresTraining = []
-featuresTesting = []
-featuresValidation = []
 
-# load images from each class subfolder
-for className in CLASSES.keys():
-    for fileName in listdir('{}/{}'.format(baseDir, className)):
-        filepath = '{}/{}/{}'.format(baseDir, className, fileName)
-        print('processing', filepath)
-        image = Image.open(filepath).convert('L') # as grayscale
-        if className == "sky":
-            featuresSky += featureVectorFromImage(image, className)
-        if className == "river":
-            featuresRiver += featureVectorFromImage(image, className)
-        if className == "other":
-                featuresOther += featureVectorFromImage(image, className)
+def loadSplitFeatures(baseDir):
+    featuresSky = [] # will contain the feature vectors for all training pixels
+    featuresRiver = []
+    featuresOther = []
+    featuresTraining = []
+    featuresTesting = []
+    featuresValidation = []
 
-featuresTraining += featuresSky[0:int(len(featuresSky)/3)]
-featuresTraining += featuresRiver[0:int(len(featuresRiver)/3)]
-featuresTraining += featuresOther[0:int(len(featuresOther) / 3)]
-featuresTesting += featuresSky[int(len(featuresSky)/3):int(len(featuresSky)/3*2)]
-featuresTesting += featuresRiver[int(len(featuresRiver)/3):int(len(featuresRiver)/3*2)]
-featuresTesting += featuresOther[int(len(featuresOther) / 3):int(len(featuresOther) / 3*2)]
-featuresValidation += featuresSky[int(len(featuresSky)/3*2):int(len(featuresSky))]
-featuresValidation += featuresRiver[int(len(featuresRiver)/3*2):int(len(featuresRiver))]
-featuresValidation += featuresOther[int(len(featuresOther) / 3*2):int(len(featuresOther))]
+    # load images from each class subfolder
+    for className in CLASSES.keys():
+        for fileName in listdir('{}/{}'.format(baseDir, className)):
+            filepath = '{}/{}/{}'.format(baseDir, className, fileName)
+            print('processing', filepath)
+            image = Image.open(filepath).convert('L') # as grayscale
+            if className == "sky":
+                featuresSky += featureVectorFromImage(image, className)
+            if className == "river":
+                featuresRiver += featureVectorFromImage(image, className)
+            if className == "other":
+                    featuresOther += featureVectorFromImage(image, className)
 
-print('resulting feature vector')
-features = np.array(featuresValidation)
-print(np.shape(features))
-print(features)
+    featuresTraining += featuresSky[0:int(len(featuresSky)/3)]
+    featuresTraining += featuresRiver[0:int(len(featuresRiver)/3)]
+    featuresTraining += featuresOther[0:int(len(featuresOther) / 3)]
+    featuresTesting += featuresSky[int(len(featuresSky)/3):int(len(featuresSky)/3*2)]
+    featuresTesting += featuresRiver[int(len(featuresRiver)/3):int(len(featuresRiver)/3*2)]
+    featuresTesting += featuresOther[int(len(featuresOther) / 3):int(len(featuresOther) / 3*2)]
+    featuresValidation += featuresSky[int(len(featuresSky)/3*2):int(len(featuresSky))]
+    featuresValidation += featuresRiver[int(len(featuresRiver)/3*2):int(len(featuresRiver))]
+    featuresValidation += featuresOther[int(len(featuresOther) / 3*2):int(len(featuresOther))]
+
+    return np.array(featuresTraining), np.array(featuresValidation), np.array(featuresTesting)
+
+# print('creating featurevector')
+# features, validation, testing = loadSplitFeatures('./trainingdata')
+# print('resulting feature vector')
+# features = np.array(features)
+# print(np.shape(features))
+# print(features)
