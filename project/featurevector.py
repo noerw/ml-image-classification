@@ -1,3 +1,5 @@
+from builtins import type
+
 from os import listdir
 
 import numpy as np
@@ -15,7 +17,7 @@ PIXEL_DISTANCE = 5 # number of pixels to consider as neighbours
 def getIntensity(pixel):
     ''' transform pixel to value
     '''
-    if typeof pixel == list: # RGB
+    if type(pixel) == list: # RGB
         return (pixel[0] + pixel[1] + pixel[2]) / 3.0 / 255.0
     else: # grayscale
         return pixel / 255.0
@@ -27,7 +29,7 @@ def featureVectorHenry(image, klasse, pDistance):
     extracts pDistance neighbouring pixels in each direction
     '''
 
-    pixels = np.array(image)
+    pixels = image.load()
     width, height = image.size
     all_pixels = []
     for x in range(width-pDistance)[pDistance::pDistance*2]:
@@ -64,20 +66,38 @@ def featureVectorFromImage(image, className):
 
 ##### MAIN#####
 
-baseDir = './project/trainingdata'
-features = [] # will contain the feature vectors for all training pixels
-
+baseDir = './trainingdata'
+featuresSky = [] # will contain the feature vectors for all training pixels
+featuresRiver = []
+featuresOther = []
+featuresTraining = []
+featuresTesting = []
+featuresValidation = []
 
 # load images from each class subfolder
 for className in CLASSES.keys():
     for fileName in listdir('{}/{}'.format(baseDir, className)):
         filepath = '{}/{}/{}'.format(baseDir, className, fileName)
         print('processing', filepath)
-
         image = Image.open(filepath).convert('L') # as grayscale
-        features += featureVectorFromImage(image, className)
+        if className == "sky":
+            featuresSky += featureVectorFromImage(image, className)
+        if className == "river":
+            featuresRiver += featureVectorFromImage(image, className)
+        if className == "other":
+                featuresOther += featureVectorFromImage(image, className)
+
+featuresTraining += featuresSky[0:int(len(featuresSky)/3)]
+featuresTraining += featuresRiver[0:int(len(featuresRiver)/3)]
+featuresTraining += featuresOther[0:int(len(featuresOther) / 3)]
+featuresTesting += featuresSky[int(len(featuresSky)/3):int(len(featuresSky)/3*2)]
+featuresTesting += featuresRiver[int(len(featuresRiver)/3):int(len(featuresRiver)/3*2)]
+featuresTesting += featuresOther[int(len(featuresOther) / 3):int(len(featuresOther) / 3*2)]
+featuresValidation += featuresSky[int(len(featuresSky)/3*2):int(len(featuresSky))]
+featuresValidation += featuresRiver[int(len(featuresRiver)/3*2):int(len(featuresRiver))]
+featuresValidation += featuresOther[int(len(featuresOther) / 3*2):int(len(featuresOther))]
 
 print('resulting feature vector')
-features = np.array(features)
+features = np.array(featuresValidation)
 print(np.shape(features))
 print(features)
