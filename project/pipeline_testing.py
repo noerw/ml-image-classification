@@ -3,7 +3,6 @@ import numpy as np
 from PIL import Image
 from marsland_example import mlp
 
-from featurevector import featureVectorHenry, loadSplitFeatures
 scriptDir = os.path.dirname(__file__) or '.'
 trainingdata = scriptDir + '/trainingdata'
 
@@ -12,6 +11,40 @@ This file serves as a template outlining the MLP training and evaluation steps.
 
 To be filled in as we progress in this project.
 '''
+
+def featureVector(image, pDistance=5, classified_image=None):
+    '''
+    moving window across image.
+    feature vector:
+    - pixel (self)
+    - pDistance * 2 neighbours X axis
+    - pDistance * 2 neighbours y axis
+    - optional: 3 values for image class as [R,G,B]
+    '''
+    
+    features = []
+
+    if(classified_image not None):
+        classified_pixels =  np.array(classified_image).astype(np.float) / 255.0 
+    
+    pixels = image.load() # note: x and y are in a different order than in 'classified_pixels'
+    width, height = image.size
+
+    for x in range(width-pDistance)[pDistance::]:
+        for y in range(height-pDistance)[pDistance::]:
+            px = [pixels[x, y] / 255.0]
+
+            for z in range(pDistance+1)[1:]:
+                px += [
+                    pixels[x-z, y] / 255.0,
+                    pixels[x+z, y] / 255.0,
+                    pixels[x, y-z] / 255.0,
+                    pixels[x, y+z] / 255.0,
+                ]
+            if(classified_image not None):
+                px += list(classified_pixels[y,x]) # append class identification
+            features.append(px) # include 
+    return features
 
 def balanceClasses(featuresByClass):
     maxClassSize = max(featuresByClass, key=lambda feats: np.shape(feats)[0]) # FIXME: does not what we want
@@ -110,27 +143,25 @@ def training(dataTrain, dataValidation, dataTesting):
 
 
 
-def testing(model, testingImg):
+def testing(model, imageLocation, OUTPUT_IMG):
     ''' classify another image, and show the classification result as image
     '''
+    img = Image.open(imageLocation)
+    img_width = img.width
+    img_height = img.height
+    arr = np.array(img)
+    inputs = featureVector(img)
+    inputs = np.concatenate((inputs,-np.ones((np.shape(inputs)[0],1))),axis=1)
+    outputs = model.mlpfwd(inputs)
+    outputs = np.argmax(outputs,1)
+    for m in range(img_height-pDistance)[pDistance::]:
+        for n in range(img_width-pDistance)[pDistance:]:
+            classifiedPixel = [0,0,0]   
+            classifiedPixel[outputs[((m-5)*img_width)+n-5]]=255
+            arr[m,n] = classifiedPixel
+    img_out = Image.fromarray(arr).show()
+    img_out.save(OUTPUT_IMG)
 
-    resultimage = Image.new('RGB', (testingImg.size))
-    print(testingImg.size)
-    # inputs = featureVectors(testingImg, None)
-
-
-    # for each pixel
-    #     classification = model.feedforward(inputs[pixel])
-    #     resultimage[pixel] = classification
-
-    i = 0
-    for x in range(whole_width):
-        for y in range(whole_height):
-            pixel = (prediction[i] * 255).astype(np.int)
-            classified_pixels[x, y] = tuple(pixel)
-            i = i + 1
-
-    resultimage.show()
 
     pass
 
@@ -154,9 +185,9 @@ print(
     np.shape(dataValidation),
     np.shape(dataTesting),
 )
-#model = training(dataTrain, dataValidation, dataTesting)
+model = training(dataTrain, dataValidation, dataTesting)
 
-testing(None, TESTING_IMG)
+testing(model, SOURCE_IMG, OUTPUT_IMG)
 
 # model = training(dataTrain, dataValidation, dataTesting)
 
