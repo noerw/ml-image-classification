@@ -12,28 +12,34 @@ CLASSES = {
     'other': [0, 0, 1],
 }
 
+
 PIXEL_DISTANCE = 5 # number of pixels to consider as neighbours
 
 def getIntensity(pixel):
     ''' transform pixel to value
     '''
-    if type(pixel) == list: # RGB
+    if type(pixel) == tuple or type(pixel) == list: # RGB
         return (pixel[0] + pixel[1] + pixel[2]) / 3.0 / 255.0
     else: # grayscale
         return pixel / 255.0
 
 
-def featureVectorHenry(image, klasse, pDistance):
+def featureVectorHenry(image, classified_image, pDistance):
     '''
     moving window:
     extracts pDistance neighbouring pixels in each direction
     '''
 
-    pixels = image.load()
+    features = {
+        classname: [] for classname in CLASSES.keys()
+    }
+
+    classified_pixels =  np.array(classified_image).astype(np.float) / 255.0 
+    pixels = image.load() # note: x and y are in a different order than in 'classified_pixels'
     width, height = image.size
-    all_pixels = []
-    for x in range(width-pDistance)[pDistance::pDistance*2]:
-        for y in range(height-pDistance)[pDistance:]:
+
+    for x in range(width-pDistance)[pDistance::]:
+        for y in range(height-pDistance)[pDistance::]:
             px = [getIntensity(pixels[x, y])]
 
             for z in range(pDistance+1)[1:]:
@@ -43,14 +49,14 @@ def featureVectorHenry(image, klasse, pDistance):
                     getIntensity(pixels[x, y-z]),
                     getIntensity(pixels[x, y+z]),
                 ]
+            px += list(classified_pixels[y,x]) # append class identification
+            for name, classs in CLASSES.items():
+                if classs == list(classified_pixels[y,x]):
+                    features[name].append(px) # include 
+    return features
 
-            px += klasse
-            all_pixels.append(px)
 
-    return all_pixels
-
-
-def featureVectorFromImage(image, className):
+def featureVectorFromImage(original_image, classified_image):
     '''
     moving window across image.
     feature vector:
@@ -60,7 +66,7 @@ def featureVectorFromImage(image, className):
     - 3 values for image class as [river, sky, other]
     '''
 
-    return featureVectorHenry(image, CLASSES[className], PIXEL_DISTANCE)
+    return featureVectorHenry(original_image, classified_image, PIXEL_DISTANCE)
 
 
 
@@ -75,18 +81,14 @@ def loadSplitFeatures(baseDir):
     featuresTesting = []
     featuresValidation = []
 
-    # load images from each class subfolder
-    for className in CLASSES.keys():
-        for fileName in listdir('{}/{}'.format(baseDir, className)):
-            filepath = '{}/{}/{}'.format(baseDir, className, fileName)
-            print('processing', filepath)
-            image = Image.open(filepath).convert('L') # as grayscale
-            if className == "sky":
-                featuresSky += featureVectorFromImage(image, className)
-            if className == "river":
-                featuresRiver += featureVectorFromImage(image, className)
-            if className == "other":
-                    featuresOther += featureVectorFromImage(image, className)
+
+    # load classified and original image
+    classified_image = Image.open("./data/drone150meter_classified.png")
+    original_image = Image.open("./data/drone150meter.jpg").convert('L')
+    features = featureVectorFromImage(original_image, classified_image)
+
+
+    #TODO: Split features into testing, training and validation
 
     featuresTraining += featuresSky[0:int(len(featuresSky)/3)]
     featuresTraining += featuresRiver[0:int(len(featuresRiver)/3)]
