@@ -38,18 +38,47 @@ def featureVector(image, pDistance=5, classified_image=None):
                     pixels[x, y-z] / 255.0,
                     pixels[x, y+z] / 255.0,
                 ]
-            if classified_image not None:
+
+            if classified_image:
                 px += list(classified_pixels[y,x]) # append class identification
-            features.append(px) # include 
+            features.append(px)
+
     return features
 
-def balanceClasses(featuresByClass):
-    maxClassSize = max(featuresByClass, key=lambda feats: np.shape(feats)[0]) # FIXME: does not what we want
+def balanceClasses(all_features, numClasses):
+    all_features = np.array(all_features)
 
-    print(maxClassSize)
+    # split features by classes
+    columns = np.shape(all_features)[1]
+    featuresByClass = [None] * numClasses # list of np.arrays, one per class
+
+    for i in range(numClasses):
+        indices = np.where(all_features[:,columns - i - 1] == 1)
+        featuresByClass[i] = all_features[indices]
+
+    maxClassSize = 0
     for features in featuresByClass:
-        balanceFactor = float(maxClassSize) / len(features)
-        # TODO: append `balancefactor` percent of the list to itself
+        if len(features) > maxClassSize:
+            maxClassSize = len(features)
+
+
+    # make all classess approximately the length of maxClassSize
+    # by appending itself repeatetly
+    for features in featuresByClass:
+        # if balanceFactor == 0   --> has desired size
+        # if balanceFactor == 1.6 --> needs 160% size
+        balanceFactor = float(maxClassSize) / len(features) - 1.0
+        assert balanceFactor >= 0
+
+        f = list(features)
+        while balanceFactor > 0:
+            if balanceFactor >= 1: # full length needs to be appended
+                features = np.append(features, f, axis=0)
+                balanceFactor -= 1
+            else: # subset needs to be added
+                numFeatures = int(len(f) * balanceFactor)
+                features = np.append(features, f[0:numFeatures], axis=0)
+                balanceFactor = 0
 
     # merge all classes into a single array
     return np.vstack(featuresByClass)
@@ -73,6 +102,12 @@ def splitFeatures(features, trainValidateTestSplit):
     d_test     = features[f_train + f_validate :]
 
     return d_train, d_validate, d_test
+
+
+
+
+
+
 
 
 def loadTrainingData(rgbImg, classMaskImg, trainValidateTestSplit):
@@ -150,7 +185,7 @@ def testing(model, imageLocation, OUTPUT_IMG):
     outputs = np.argmax(outputs,1)
     for m in range(img_height-pDistance)[pDistance::]:
         for n in range(img_width-pDistance)[pDistance:]:
-            classifiedPixel = [0,0,0]   
+            classifiedPixel = [0,0,0]
             classifiedPixel[outputs[((m-5)*img_width)+n-5]]=255
             arr[m,n] = classifiedPixel
     img_out = Image.fromarray(arr).show()
