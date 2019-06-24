@@ -3,9 +3,6 @@ import numpy as np
 from PIL import Image
 from marsland_example import mlp
 
-scriptDir = os.path.dirname(__file__) or '.'
-trainingdata = scriptDir + '/trainingdata'
-
 '''
 This file serves as a template outlining the MLP training and evaluation steps.
 
@@ -21,12 +18,12 @@ def featureVector(image, pDistance=5, classified_image=None):
     - pDistance * 2 neighbours y axis
     - optional: 3 values for image class as [R,G,B]
     '''
-    
+
     features = []
 
-    if classified_image not None:
-        classified_pixels =  np.array(classified_image).astype(np.float) / 255.0 
-    
+    if classified_image:
+        classified_pixels = np.array(classified_image).astype(np.float) / 255.0
+
     pixels = image.load() # note: x and y are in a different order than in 'classified_pixels'
     width, height = image.size
 
@@ -79,18 +76,15 @@ def splitFeatures(features, trainValidateTestSplit):
 
 
 def loadTrainingData(rgbImg, classMaskImg, trainValidateTestSplit):
-    # load input images
     print('----> opening images')
     img = Image.open(rgbImg).convert('L') # as grayscale
     classMask = Image.open(classMaskImg).convert('RGB')
 
-    # create feature vectors (see featurevector.py)
     print('----> extracting feature vectors')
-    featuresByClass = featureVectorHenry(img, classMask, 5)
+    features = featureVector(img, 5, classMask)
 
-    # balance classes
-    print('----> balancing classes (@INCOMPLETE!)')
-    features = balanceClasses(list(featuresByClass.values()))
+    print('----> balancing classes')
+    features = balanceClasses(features, NUM_CLASSES)
 
     # split features into train, validate, test & return
     print('----> splitting data into train/validate/test sets')
@@ -108,8 +102,8 @@ def training(dataTrain, dataValidation, dataTesting):
     ''' train & validate
     '''
 
-    # split featurevectors into inputs & targets
-    data_train, data_test, data_validate = loadSplitFeatures(trainingdata)
+    # TODO: split featurevectors into inputs & targets
+    # data_train, data_test, data_validate = loadSplitFeatures(trainingdata)
 
     # split targets from feature vector
     number_predictors = len(data_train[0]) - 3 # 3 classes / output neurons
@@ -175,9 +169,9 @@ SOURCE_IMG = pwd + '/../data/drone150meter_small.png'           # NOTE: for fast
 CLASS_IMG  = pwd + '/../data/drone150meter_classified_small.png'
 OUTPUT_IMG = pwd + '/test.png'
 DATA_SPLIT = [0.5, 0.25, 0.25] # percentage of train, validate, test
+NUM_CLASSES = 3
 
 dataTrain, dataValidation, dataTesting = loadTrainingData(SOURCE_IMG, CLASS_IMG, DATA_SPLIT)
-#dataTrain, dataValidation, dataTesting = loadTrainingData(SOURCE_IMG, TRAINING_IMG, DATA_SPLIT)
 
 print('test, validate, testing')
 print(
@@ -192,4 +186,3 @@ testing(model, SOURCE_IMG, OUTPUT_IMG)
 # model = training(dataTrain, dataValidation, dataTesting)
 
 # testing(model, OUTPUT_IMG)
-
