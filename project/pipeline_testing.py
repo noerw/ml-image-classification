@@ -1,8 +1,11 @@
 import os
 import numpy as np
 from PIL import Image
+from marsland_example import mlp
 
-from featurevector import featureVectorHenry
+from featurevector import featureVectorHenry, loadSplitFeatures
+scriptDir = os.path.dirname(__file__) or '.'
+trainingdata = scriptDir + '/trainingdata'
 
 '''
 This file serves as a template outlining the MLP training and evaluation steps.
@@ -73,7 +76,7 @@ def training(dataTrain, dataValidation, dataTesting):
     '''
 
     # split featurevectors into inputs & targets
-    data_train, data_test, data_validate = loadSplitFeatures(baseDir)
+    data_train, data_test, data_validate = loadSplitFeatures(trainingdata)
 
     # split targets from feature vector
     number_predictors = len(data_train[0]) - 3 # 3 classes / output neurons
