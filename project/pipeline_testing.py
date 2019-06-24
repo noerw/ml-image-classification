@@ -24,7 +24,7 @@ def featureVector(image, pDistance=5, classified_image=None):
     
     features = []
 
-    if(classified_image not None):
+    if classified_image not None:
         classified_pixels =  np.array(classified_image).astype(np.float) / 255.0 
     
     pixels = image.load() # note: x and y are in a different order than in 'classified_pixels'
@@ -41,7 +41,7 @@ def featureVector(image, pDistance=5, classified_image=None):
                     pixels[x, y-z] / 255.0,
                     pixels[x, y+z] / 255.0,
                 ]
-            if(classified_image not None):
+            if classified_image not None:
                 px += list(classified_pixels[y,x]) # append class identification
             features.append(px) # include 
     return features
