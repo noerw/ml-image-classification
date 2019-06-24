@@ -73,12 +73,31 @@ def training(dataTrain, dataValidation, dataTesting):
     '''
 
     # split featurevectors into inputs & targets
+    data_train, data_test, data_validate = loadSplitFeatures(baseDir)
+
+    # split targets from feature vector
+    number_predictors = len(data_train[0]) - 3 # 3 classes / output neurons
+
+    inputs = data_train[:,0:number_predictors]
+    targets = data_train[:,number_predictors:]
+
+    validation_inputs = data_validate[:,0:number_predictors]
+    validation_targets = data_validate[:,number_predictors:]
+
+    test_inputs = data_test[:,0:number_predictors]
+    test_targets = data_test[:,number_predictors:]
 
     # initialize model
-    model = Mlp(inputs, targets, ...)
+    model = mlp.mlp(inputs, targets, 5)
 
     # train until validation says we're not learning anymore
-    model.earlyStopping(dataTrain, dataValidation, dataTesting)
+    model.earlystopping(
+        inputs, targets,
+        validation_inputs, validation_targets,
+        0.1,
+    )
+
+    #net.confmat(data_train[:,0:number_predictors], data_train[:,number_predictors:]) # Confusion matrix
 
 
     return model
@@ -92,14 +111,23 @@ def testing(model, testingImg):
     ''' classify another image, and show the classification result as image
     '''
 
-    # resultimage = Image.new() (???)
+    resultimage = Image.new('RGB', (testingImg.size))
+    print(testingImg.size)
     # inputs = featureVectors(testingImg, None)
+
 
     # for each pixel
     #     classification = model.feedforward(inputs[pixel])
     #     resultimage[pixel] = classification
 
-    # resultimage.show()
+    i = 0
+    for x in range(whole_width):
+        for y in range(whole_height):
+            pixel = (prediction[i] * 255).astype(np.int)
+            classified_pixels[x, y] = tuple(pixel)
+            i = i + 1
+
+    resultimage.show()
 
     pass
 
@@ -115,6 +143,7 @@ OUTPUT_IMG = pwd + '/test.png'
 DATA_SPLIT = [0.5, 0.25, 0.25] # percentage of train, validate, test
 
 dataTrain, dataValidation, dataTesting = loadTrainingData(SOURCE_IMG, CLASS_IMG, DATA_SPLIT)
+#dataTrain, dataValidation, dataTesting = loadTrainingData(SOURCE_IMG, TRAINING_IMG, DATA_SPLIT)
 
 print('test, validate, testing')
 print(
@@ -122,7 +151,9 @@ print(
     np.shape(dataValidation),
     np.shape(dataTesting),
 )
+#model = training(dataTrain, dataValidation, dataTesting)
 
+testing(None, TESTING_IMG)
 
 # model = training(dataTrain, dataValidation, dataTesting)
 

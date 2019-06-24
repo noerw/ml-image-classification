@@ -46,6 +46,7 @@ whole_height = 123
 # img = Image.new( whole_image.mode, whole_image.size)
 img = Image.new('RGB', (whole_width, whole_height))
 classified_pixels = img.load()
+print(img.size)
 
 i = 0
 for x in range(whole_width):
