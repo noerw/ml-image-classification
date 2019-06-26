@@ -133,15 +133,12 @@ def loadTrainingData(rgbImg, classMaskImg, trainValidateTestSplit):
 
 
 
-def training(dataTrain, dataValidation, dataTesting):
+def training(data_train, data_validate, data_test):
     ''' train & validate
     '''
 
-    # TODO: split featurevectors into inputs & targets
-    # data_train, data_test, data_validate = loadSplitFeatures(trainingdata)
-
     # split targets from feature vector
-    number_predictors = len(data_train[0]) - 3 # 3 classes / output neurons
+    number_predictors = len(data_train[0]) - NUM_CLASSES # 3 classes / output neurons
 
     inputs = data_train[:,0:number_predictors]
     targets = data_train[:,number_predictors:]
@@ -159,10 +156,10 @@ def training(dataTrain, dataValidation, dataTesting):
     model.earlystopping(
         inputs, targets,
         validation_inputs, validation_targets,
-        0.1,
+        0.1, 1000
     )
 
-    #net.confmat(data_train[:,0:number_predictors], data_train[:,number_predictors:]) # Confusion matrix
+    model.confmat(test_inputs, test_targets) # Confusion matrix
 
 
     return model
@@ -172,32 +169,35 @@ def training(dataTrain, dataValidation, dataTesting):
 
 
 
-def testing(model, imageLocation, OUTPUT_IMG):
+def testing(model, imageLocation, OUTPUT_IMG, pDistance=5):
     ''' classify another image, and show the classification result as image
     '''
-    img = Image.open(imageLocation)
+    img2 = Image.open(imageLocation)
+    img = Image.open(imageLocation).convert('L')
     img_width = img.width
     img_height = img.height
-    arr = np.array(img)
+    arr = np.array(img2)
     inputs = featureVector(img)
     inputs = np.concatenate((inputs,-np.ones((np.shape(inputs)[0],1))),axis=1)
     outputs = model.mlpfwd(inputs)
     outputs = np.argmax(outputs,1)
-    for m in range(img_height-pDistance)[pDistance::]:
-        for n in range(img_width-pDistance)[pDistance:]:
+    for m in range(img_height-pDistance*2):
+        for n in range(img_width-pDistance*2):
             classifiedPixel = [0,0,0]
-            classifiedPixel[outputs[((m-5)*img_width)+n-5]]=255
-            arr[m,n] = classifiedPixel
-    img_out = Image.fromarray(arr).show()
+            index = m*(img_width-pDistance*2)+n
+            classifiedPixel[outputs[index]]=255
+            arr[m+pDistance,n+pDistance] = classifiedPixel
+    img_out = Image.fromarray(arr)
+    img_out.show()
     img_out.save(OUTPUT_IMG)
 
 
 pwd = os.path.dirname(os.path.realpath(__file__))
 
-# SOURCE_IMG = pwd + '/../data/drone150meter.jpg'
-# CLASS_IMG  = pwd + '/../data/drone150meter_classified.png'
-SOURCE_IMG = pwd + '/../data/drone150meter_small.png'           # NOTE: for faster testing purposes only!
-CLASS_IMG  = pwd + '/../data/drone150meter_classified_small.png'
+SOURCE_IMG = pwd + '/../data/drone150meter.jpg'
+CLASS_IMG  = pwd + '/../data/drone150meter_classified.png'
+# SOURCE_IMG = pwd + '/../data/drone150meter_small.png'           # NOTE: for faster testing purposes only!
+# CLASS_IMG  = pwd + '/../data/drone150meter_classified_small.png'
 OUTPUT_IMG = pwd + '/test.png'
 DATA_SPLIT = [0.5, 0.25, 0.25] # percentage of train, validate, test
 NUM_CLASSES = 3
@@ -212,5 +212,5 @@ print(
 )
 
 model = training(dataTrain, dataValidation, dataTesting)
-testing(model, SOURCE_IMG, OUTPUT_IMG)
 
+testing(model, SOURCE_IMG, OUTPUT_IMG)
