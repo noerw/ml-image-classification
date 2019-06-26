@@ -192,10 +192,6 @@ def testing(model, imageLocation, OUTPUT_IMG):
     img_out.save(OUTPUT_IMG)
 
 
-    pass
-
-
-
 pwd = os.path.dirname(os.path.realpath(__file__))
 
 # SOURCE_IMG = pwd + '/../data/drone150meter.jpg'
@@ -214,10 +210,7 @@ print(
     np.shape(dataValidation),
     np.shape(dataTesting),
 )
-model = training(dataTrain, dataValidation, dataTesting)
 
+model = training(dataTrain, dataValidation, dataTesting)
 testing(model, SOURCE_IMG, OUTPUT_IMG)
 
-# model = training(dataTrain, dataValidation, dataTesting)
-
-# testing(model, OUTPUT_IMG)
