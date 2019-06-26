@@ -64,7 +64,7 @@ def balanceClasses(all_features, numClasses):
 
     # make all classess approximately the length of maxClassSize
     # by appending itself repeatetly
-    for features in featuresByClass:
+    for i, features in enumerate(featuresByClass):
         # if balanceFactor == 0   --> has desired size
         # if balanceFactor == 1.6 --> needs 160% size
         balanceFactor = float(maxClassSize) / len(features) - 1.0
@@ -79,6 +79,8 @@ def balanceClasses(all_features, numClasses):
                 numFeatures = int(len(f) * balanceFactor)
                 features = np.append(features, f[0:numFeatures], axis=0)
                 balanceFactor = 0
+
+        featuresByClass[i] = features
 
     # merge all classes into a single array
     return np.vstack(featuresByClass)
@@ -137,6 +139,8 @@ def training(data_train, data_validate, data_test):
     ''' train & validate
     '''
 
+    print('----> starting training')
+
     # split targets from feature vector
     number_predictors = len(data_train[0]) - NUM_CLASSES # 3 classes / output neurons
 
@@ -150,13 +154,13 @@ def training(data_train, data_validate, data_test):
     test_targets = data_test[:,number_predictors:]
 
     # initialize model
-    model = mlp.mlp(inputs, targets, 5)
+    model = mlp.mlp(inputs, targets, 3)
 
     # train until validation says we're not learning anymore
     model.earlystopping(
         inputs, targets,
         validation_inputs, validation_targets,
-        0.1, 1000
+        0.1, 400
     )
 
     model.confmat(test_inputs, test_targets) # Confusion matrix
@@ -172,6 +176,9 @@ def training(data_train, data_validate, data_test):
 def testing(model, imageLocation, OUTPUT_IMG, pDistance=5):
     ''' classify another image, and show the classification result as image
     '''
+
+    print('----> testing with second image')
+
     img2 = Image.open(imageLocation)
     img = Image.open(imageLocation).convert('L')
     img_width = img.width
@@ -194,10 +201,10 @@ def testing(model, imageLocation, OUTPUT_IMG, pDistance=5):
 
 pwd = os.path.dirname(os.path.realpath(__file__))
 
-SOURCE_IMG = pwd + '/../data/drone150meter.jpg'
-CLASS_IMG  = pwd + '/../data/drone150meter_classified.png'
-# SOURCE_IMG = pwd + '/../data/drone150meter_small.png'           # NOTE: for faster testing purposes only!
-# CLASS_IMG  = pwd + '/../data/drone150meter_classified_small.png'
+# SOURCE_IMG = pwd + '/../data/drone150meter.jpg'
+# CLASS_IMG  = pwd + '/../data/drone150meter_classified.png'
+SOURCE_IMG = pwd + '/../data/drone150meter_small.png'           # NOTE: for faster testing purposes only!
+CLASS_IMG  = pwd + '/../data/drone150meter_classified_small.png'
 OUTPUT_IMG = pwd + '/test.png'
 DATA_SPLIT = [0.5, 0.25, 0.25] # percentage of train, validate, test
 NUM_CLASSES = 3
