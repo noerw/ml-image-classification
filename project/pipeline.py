@@ -118,7 +118,7 @@ def loadTrainingData(rgbImg, classMaskImg, trainValidateTestSplit):
     classMask = Image.open(classMaskImg).convert('RGB')
 
     print('----> extracting feature vectors')
-    features = featureVector(img, 5, classMask)
+    features = featureVector(img, WINDOW_SIZE, classMask)
 
     print('----> balancing classes')
     features = balanceClasses(features, NUM_CLASSES)
@@ -154,13 +154,13 @@ def training(data_train, data_validate, data_test):
     test_targets = data_test[:,number_predictors:]
 
     # initialize model
-    model = mlp.mlp(inputs, targets, 3)
+    model = mlp.mlp(inputs, targets, LAYERS, outtype='linear')
 
     # train until validation says we're not learning anymore
     model.earlystopping(
         inputs, targets,
         validation_inputs, validation_targets,
-        0.1, 400
+        0.1, ITERATIONS
     )
 
     model.confmat(test_inputs, test_targets) # Confusion matrix
@@ -181,8 +181,8 @@ def testing(model, imageLocation, OUTPUT_IMG, pDistance=5):
 
     img2 = Image.open(imageLocation)
     img = Image.open(imageLocation).convert('L')
-    img_width = img.width
-    img_height = img.height
+    img_width = img.height
+    img_height = img.width
     arr = np.array(img2)
     inputs = featureVector(img)
     inputs = np.concatenate((inputs,-np.ones((np.shape(inputs)[0],1))),axis=1)
@@ -193,25 +193,36 @@ def testing(model, imageLocation, OUTPUT_IMG, pDistance=5):
             classifiedPixel = [0,0,0]
             index = m*(img_width-pDistance*2)+n
             classifiedPixel[outputs[index]]=255
-            arr[m+pDistance,n+pDistance] = classifiedPixel
+            arr[n+pDistance,m+pDistance] = classifiedPixel
     img_out = Image.fromarray(arr)
     img_out.show()
     img_out.save(OUTPUT_IMG)
 
 
+
+
+
 pwd = os.path.dirname(os.path.realpath(__file__))
+# SOURCE_IMG = pwd + '/../data/test.png'
+# SOURCE_IMG = pwd + '/../data/test2.png'
+# CLASS_IMG  = pwd + '/../data/test_classified.png'
 
 # SOURCE_IMG = pwd + '/../data/drone150meter.jpg'
 # CLASS_IMG  = pwd + '/../data/drone150meter_classified.png'
 SOURCE_IMG = pwd + '/../data/drone150meter_small.png'           # NOTE: for faster testing purposes only!
 CLASS_IMG  = pwd + '/../data/drone150meter_classified_small.png'
 OUTPUT_IMG = pwd + '/test.png'
+
 DATA_SPLIT = [0.5, 0.25, 0.25] # percentage of train, validate, test
 NUM_CLASSES = 3
 
+WINDOW_SIZE = 5
+LAYERS = 3
+ITERATIONS = 300
+
 dataTrain, dataValidation, dataTesting = loadTrainingData(SOURCE_IMG, CLASS_IMG, DATA_SPLIT)
 
-print('test, validate, testing')
+print('train, validate, testing')
 print(
     np.shape(dataTrain),
     np.shape(dataValidation),
@@ -220,4 +231,4 @@ print(
 
 model = training(dataTrain, dataValidation, dataTesting)
 
-testing(model, SOURCE_IMG, OUTPUT_IMG)
+testing(model, SOURCE_IMG, OUTPUT_IMG, WINDOW_SIZE)
