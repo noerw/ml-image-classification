@@ -178,7 +178,8 @@ def training(data_train, data_validate, data_test):
     model.earlystopping(
         inputs, targets,
         validation_inputs, validation_targets,
-        0.1, ITERATIONS
+        0.1, ITERATIONS,
+        stoppingThreshold=0.05
     )
 
     model.confmat(test_inputs, test_targets)  # Confusion matrix
