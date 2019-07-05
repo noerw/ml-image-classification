@@ -20,32 +20,48 @@ def featureVector(image, pDistance=5, classified_image=None):
     - optional: 3 values for image class as [R,G,B]
     '''
 
-    features = []
-
     if classified_image:
         classified_pixels = np.array(classified_image).astype(np.float) / 255.0
 
     pixels = image.load()  # note: x and y are in a different order than in 'classified_pixels'
     width, height = image.size
 
+    # pre-allocate feature table for speed & memory efficiency
+    rows = (width - 2 * pDistance) * (height - 2 * pDistance)
+    columns = 1 + 4 * pDistance
+    if classified_image:
+        columns += NUM_CLASSES
+
+    features = np.zeros((rows, columns))
+    currentRow = 0
+
+    # FIXME: we're leaking memory here...
     for x in range(width - pDistance)[pDistance::]:
         for y in range(height - pDistance)[pDistance::]:
-            px = [pixels[x, y] / 255.0]
+            # skip pixels that are not classified as pure red, green or blue
+            if classified_image and classified_pixels[y, x].sum() != 1.0:
+                continue
 
-            for z in range(pDistance + 1)[1:]:
-                px += [
+            feature = np.zeros((columns,))
+            feature[0] = pixels[x, y] / 255.0
+
+            for z in range(1, pDistance + 1):
+                feature[(1+(z-1)*4) : (z*4+1)] = [
                     pixels[x - z, y] / 255.0,
                     pixels[x + z, y] / 255.0,
                     pixels[x, y - z] / 255.0,
                     pixels[x, y + z] / 255.0,
                 ]
 
-            if classified_image:
-                px += list(classified_pixels[y, x])  # append class identification
-            features.append(px)
+            if classified_image: # append class identification
+                feature[columns - NUM_CLASSES : columns] = classified_pixels[y, x]
 
-    return features
+            features[currentRow] = feature # FIXME: we're leaking memory here? or does it have to be like that?
+            currentRow += 1 
 
+
+    # return only filled rows (as we may have skipped some)
+    return features[np.any(features, axis=1)]
 
 def balanceClasses(all_features, numClasses):
     all_features = np.array(all_features)
