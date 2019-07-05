@@ -117,9 +117,9 @@ def splitFeatures(features, trainValidateTestSplit):
     # do split
     f_train, f_validate, f_test = (np.array(trainValidateTestSplit) * totalFeats).astype(np.int)
 
-    d_train = features[0: f_train]
-    d_validate = features[f_train: f_train + f_validate]
-    d_test = features[f_train + f_validate:]
+    d_train = features[0 : f_train]
+    d_validate = features[f_train : f_train + f_validate]
+    d_test = features[f_train + f_validate : f_train + f_validate + f_test]
     return d_train, d_validate, d_test
 
 
@@ -161,12 +161,12 @@ def loadTrainingData(rgbImg, classMaskImg, trainValidateTestSplit):
     print('----> balancing classes')
     features = balanceClasses(features, NUM_CLASSES)
 
-    # downscale Data for faster computation
-    downscaledFeatures = downScaleData(5000, features)
+    #print('----> sampling features')
+    #features = sampleData(2e4, features)
 
     # split features into train, validate, test & return
     print('----> splitting data into train/validate/test sets')
-    return splitFeatures(downscaledFeatures, trainValidateTestSplit)
+    return splitFeatures(features, trainValidateTestSplit)
 
 
 def training(data_train, data_validate, data_test):
@@ -194,8 +194,8 @@ def training(data_train, data_validate, data_test):
     model.earlystopping(
         inputs, targets,
         validation_inputs, validation_targets,
-        0.1, ITERATIONS,
-        stoppingThreshold=0.05
+        0.5, ITERATIONS,
+        stoppingThreshold=STOP_ERRORDELTA
     )
 
     model.confmat(test_inputs, test_targets)  # Confusion matrix
@@ -214,10 +214,12 @@ def testing(model, imageLocation, OUTPUT_IMG, pDistance=5):
     img_width = img.height
     img_height = img.width
     arr = np.array(img2)
+
     inputs = featureVector(img)
     inputs = np.concatenate((inputs, -np.ones((np.shape(inputs)[0], 1))), axis=1)
     outputs = model.mlpfwd(inputs)
     outputs = np.argmax(outputs, 1)
+
     for m in range(img_height - pDistance * 2):
         for n in range(img_width - pDistance * 2):
             classifiedPixel = [0, 0, 0]
@@ -236,15 +238,21 @@ pwd = os.path.dirname(os.path.realpath(__file__))
 
 # SOURCE_IMG = pwd + '/../data/drone150meter.jpg'
 # CLASS_IMG  = pwd + '/../data/drone150meter_classified.png'
-SOURCE_IMG = pwd + '/../data/drone150meter_small.png'  # NOTE: for faster testing purposes only!
-CLASS_IMG = pwd + '/../data/drone150meter_classified_small.png'
-OUTPUT_IMG = pwd + '/test.png'
+#SOURCE_IMG = pwd + '/../data/drone150meter_small.png'  # NOTE: for faster testing purposes only!
+#CLASS_IMG = pwd + '/../data/drone150meter_classified_small.png'
+
+SOURCE_IMG = pwd + '/../data/DSC08967.JPG'
+CLASS_IMG  = pwd + '/../data/DSC08967_classified2.png'
+
+TEST_IMG   = pwd + '/../data/DSC08922.JPG'
+OUTPUT_IMG = pwd + '/bastiresult.png'
 
 DATA_SPLIT = [0.5, 0.25, 0.25]  # percentage of train, validate, test
 NUM_CLASSES = 3
 
-WINDOW_SIZE = 5
+WINDOW_SIZE = 7
 LAYERS = 3
+STOP_ERRORDELTA = 50.0
 ITERATIONS = 300
 
 dataTrain, dataValidation, dataTesting = loadTrainingData(SOURCE_IMG, CLASS_IMG, DATA_SPLIT)
@@ -258,4 +266,4 @@ print(
 
 model = training(dataTrain, dataValidation, dataTesting)
 
-testing(model, SOURCE_IMG, OUTPUT_IMG, WINDOW_SIZE)
+testing(model, TEST_IMG, OUTPUT_IMG, WINDOW_SIZE)
