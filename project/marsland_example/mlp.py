@@ -33,9 +33,9 @@ class mlp:
 
         valid = np.concatenate((valid,-np.ones((np.shape(valid)[0],1))),axis=1)
 
-        old_val_error1 = 100002
-        old_val_error2 = 100001
-        new_val_error = 100000
+        old_val_error1 = 100400
+        old_val_error2 = 100200
+        new_val_error  = 100000
 
         count = 0
         while (((old_val_error1 - new_val_error) > stoppingThreshold) or ((old_val_error2 - old_val_error1)>stoppingThreshold)):
